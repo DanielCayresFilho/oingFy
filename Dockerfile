@@ -29,8 +29,8 @@ COPY prisma ./prisma/
 # Install production dependencies
 RUN npm install --omit=dev && npm cache clean --force
 
-# Install Prisma CLI globally for migrations
-RUN npm install -g prisma@5.8.0
+# Install Prisma CLI and ts-node globally (ts-node needed for seed)
+RUN npm install -g prisma@5.8.0 ts-node typescript
 
 # Copy built files from builder stage
 COPY --from=builder /app/dist ./dist
