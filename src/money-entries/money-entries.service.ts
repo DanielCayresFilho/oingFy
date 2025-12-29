@@ -8,9 +8,16 @@ export class MoneyEntriesService {
   constructor(private prisma: PrismaService) {}
 
   create(userId: number, createMoneyEntryDto: CreateMoneyEntryDto) {
+    // Converter entryDate para DateTime completo
+    const entryDateObj = new Date(createMoneyEntryDto.entryDate);
+    if (isNaN(entryDateObj.getTime())) {
+      throw new Error('Data de entrada inválida');
+    }
+    
     return this.prisma.moneyEntry.create({
       data: {
         ...createMoneyEntryDto,
+        entryDate: entryDateObj,
         userId,
       },
     });
@@ -46,9 +53,19 @@ export class MoneyEntriesService {
   }
 
   update(id: number, userId: number, updateMoneyEntryDto: UpdateMoneyEntryDto) {
+    // Converter entryDate se presente
+    const data: any = { ...updateMoneyEntryDto };
+    if (data.entryDate) {
+      const entryDateObj = new Date(data.entryDate);
+      if (isNaN(entryDateObj.getTime())) {
+        throw new Error('Data de entrada inválida');
+      }
+      data.entryDate = entryDateObj;
+    }
+    
     return this.prisma.moneyEntry.updateMany({
       where: { id, userId },
-      data: updateMoneyEntryDto,
+      data,
     });
   }
 
