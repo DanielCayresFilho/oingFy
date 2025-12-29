@@ -37,7 +37,7 @@ function convertItemToTransaction(item: MonthMovimentationItem): Transaction {
     paidDate: item.paidAt ? item.paidAt.split('T')[0] : undefined,
     status: statusMap[item.status],
     type: typeMap[item.accountType],
-    category: 'other' as any, // Poderia mapear categoria se necessário
+    category: item.categoryName as any, // Usa o nome da categoria vindo do backend
     isRecurring: item.accountType === 'FIXED',
   };
 }

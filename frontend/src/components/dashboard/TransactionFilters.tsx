@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { FilterState, TransactionCategory, TransactionStatus, TransactionType } from '@/types/finance';
-import { getCategoryLabel, getStatusLabel } from '@/lib/formatters';
+import { getStatusLabel } from '@/lib/formatters';
 import { Search, Filter, Calendar, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,17 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { categoriesApi, Category } from '@/lib/api';
 
 interface TransactionFiltersProps {
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
 }
-
-const categories: TransactionCategory[] = [
-  'salary', 'freelance', 'investment', 'food', 'transport',
-  'utilities', 'entertainment', 'health', 'education',
-  'shopping', 'subscription', 'rent', 'credit_card', 'other'
-];
 
 const statuses: TransactionStatus[] = ['paid', 'pending', 'overdue', 'early'];
 const types: TransactionType[] = ['income', 'expense', 'credit'];
@@ -54,9 +50,26 @@ const generateMonths = () => {
 const months = generateMonths();
 
 export function TransactionFilters({ filters, onFiltersChange }: TransactionFiltersProps) {
-  const hasActiveFilters = 
-    filters.status !== 'all' || 
-    filters.category !== 'all' || 
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await categoriesApi.getAll();
+        setCategories(data);
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  const hasActiveFilters =
+    filters.status !== 'all' ||
+    filters.category !== 'all' ||
     filters.type !== 'all' ||
     filters.search !== '';
 
@@ -124,16 +137,17 @@ export function TransactionFilters({ filters, onFiltersChange }: TransactionFilt
         <Select
           value={filters.category}
           onValueChange={(value) => onFiltersChange({ ...filters, category: value as TransactionCategory | 'all' })}
+          disabled={loadingCategories}
         >
           <SelectTrigger className="w-full lg:w-[150px] bg-secondary/50 border-border/50">
             <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
-            <SelectValue placeholder="Categoria" />
+            <SelectValue placeholder={loadingCategories ? "Carregando..." : "Categoria"} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas categorias</SelectItem>
             {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {getCategoryLabel(cat)}
+              <SelectItem key={cat.id} value={cat.name}>
+                {cat.name}
               </SelectItem>
             ))}
           </SelectContent>
