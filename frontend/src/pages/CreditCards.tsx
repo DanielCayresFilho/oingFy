@@ -5,6 +5,7 @@ import * as z from 'zod';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { creditCardsApi, CreditCard } from '@/lib/api';
+import { Layout } from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -171,8 +172,8 @@ const CreditCards = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
+    <Layout>
+      <main className="max-w-7xl mx-auto px-4 lg:px-6 py-6">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold">Cartões de Crédito</h1>
@@ -385,8 +386,8 @@ const CreditCards = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
-    </div>
+      </main>
+    </Layout>
   );
 };
 

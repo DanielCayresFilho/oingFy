@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, Bell, User, LogOut, CreditCard, Receipt, FileText } from 'lucide-react';
+import { Menu, Bell, User, LogOut, CreditCard, Receipt, FileText, Tag, DollarSign, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -62,6 +62,24 @@ export function Header({ currentMonth }: HeaderProps) {
               <Link to="/accounts-variable">
                 <FileText className="h-4 w-4 mr-2" />
                 Contas Variáveis
+              </Link>
+            </Button>
+            <Button variant="ghost" asChild size="sm">
+              <Link to="/accounts-credit">
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Compras
+              </Link>
+            </Button>
+            <Button variant="ghost" asChild size="sm">
+              <Link to="/money-entries">
+                <DollarSign className="h-4 w-4 mr-2" />
+                Entradas
+              </Link>
+            </Button>
+            <Button variant="ghost" asChild size="sm">
+              <Link to="/categories">
+                <Tag className="h-4 w-4 mr-2" />
+                Categorias
               </Link>
             </Button>
           </nav>

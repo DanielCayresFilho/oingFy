@@ -11,6 +11,9 @@ import Register from "./pages/Register";
 import CreditCards from "./pages/CreditCards";
 import AccountsFixed from "./pages/AccountsFixed";
 import AccountsVariable from "./pages/AccountsVariable";
+import Categories from "./pages/Categories";
+import AccountsCredit from "./pages/AccountsCredit";
+import MoneyEntries from "./pages/MoneyEntries";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +57,30 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <AccountsVariable />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/categories"
+              element={
+                <ProtectedRoute>
+                  <Categories />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/accounts-credit"
+              element={
+                <ProtectedRoute>
+                  <AccountsCredit />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/money-entries"
+              element={
+                <ProtectedRoute>
+                  <MoneyEntries />
                 </ProtectedRoute>
               }
             />
