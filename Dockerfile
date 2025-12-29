@@ -1,7 +1,4 @@
-FROM node:20-alpine AS builder
-
-# Install OpenSSL and other dependencies for Prisma
-RUN apk add --no-cache openssl1.1-compat
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
@@ -16,10 +13,7 @@ COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-FROM node:20-alpine AS production
-
-# Install OpenSSL and other dependencies for Prisma
-RUN apk add --no-cache openssl1.1-compat
+FROM node:20-slim AS production
 
 WORKDIR /app
 
