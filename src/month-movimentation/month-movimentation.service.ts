@@ -223,7 +223,10 @@ export class MonthMovimentationService {
       });
     }
 
+    // Buscar receitas do mês e verificar items atrasados
     const currentDate = new Date();
+    currentDate.setHours(23, 59, 59, 999);
+
     const isCurrentOrPastMonth = year < currentDate.getFullYear() ||
       (year === currentDate.getFullYear() && month <= currentDate.getMonth() + 1);
 
@@ -241,10 +244,6 @@ export class MonthMovimentationService {
         }
       }
     }
-
-    // Buscar receitas do mês
-    const currentDate = new Date();
-    currentDate.setHours(23, 59, 59, 999);
 
     const moneyEntries = await this.prisma.moneyEntry.findMany({
       where: {
