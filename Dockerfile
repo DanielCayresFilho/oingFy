@@ -32,7 +32,7 @@ RUN npm install --omit=dev && npm cache clean --force
 # Install Prisma CLI globally for migrations
 RUN npm install -g prisma@5.8.0
 
-# Copy built files
+# Copy built files from builder stage
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
