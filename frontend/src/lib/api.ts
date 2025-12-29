@@ -403,10 +403,18 @@ export const monthMovimentationApi = {
     return response.data;
   },
   findByMonth: async (month: number, year: number): Promise<MonthMovimentation | null> => {
-    const response = await api.get<MonthMovimentation>('/month-movimentation/by-month', {
-      params: { month: month.toString(), year: year.toString() },
-    });
-    return response.data;
+    try {
+      const response = await api.get<MonthMovimentation>('/month-movimentation/by-month', {
+        params: { month: month.toString(), year: year.toString() },
+      });
+      return response.data;
+    } catch (error: any) {
+      // Se for 404 ou não encontrar, retornar null
+      if (error.response?.status === 404 || error.response?.status === 400) {
+        return null;
+      }
+      throw error;
+    }
   },
   getByCategory: async (month: number, year: number): Promise<ExpensesByCategory[]> => {
     const response = await api.get<ExpensesByCategory[]>('/month-movimentation/by-category', {

@@ -69,7 +69,7 @@ export class MonthMovimentationController {
   }
 
   @Get('by-month')
-  findOne(
+  async findOne(
     @Request() req,
     @Query('month') month: string,
     @Query('year') year: string,
@@ -85,7 +85,10 @@ export class MonthMovimentationController {
       throw new BadRequestException('Mês deve estar entre 1 e 12');
     }
 
-    return this.monthMovimentationService.findOne(req.user.userId, monthNum, yearNum);
+    const result = await this.monthMovimentationService.findOne(req.user.userId, monthNum, yearNum);
+    
+    // Se não encontrou, retornar null ao invés de erro
+    return result || null;
   }
 
   @Get('by-category')

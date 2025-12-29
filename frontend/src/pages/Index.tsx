@@ -114,24 +114,43 @@ const Index = () => {
       const moneyEntries = await moneyEntriesApi.findByMonth(month, year);
       
       // Converter entradas de dinheiro para transactions (income)
-      const incomeTransactions: Transaction[] = moneyEntries.map((entry: MoneyEntry) => ({
-        id: `income-${entry.id}`,
-        description: entry.name,
-        amount: Number(entry.amount),
-        dueDate: entry.entryDate.split('T')[0],
-        paidDate: entry.entryDate.split('T')[0],
-        status: 'paid' as TransactionStatus,
-        type: 'income' as const,
-        category: 'other' as any,
-        isRecurring: false,
-      }));
+      // Status deve ser 'paid' apenas se a data já passou ou é hoje
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const incomeTransactions: Transaction[] = moneyEntries.map((entry: MoneyEntry) => {
+        const entryDate = new Date(entry.entryDate.split('T')[0]);
+        entryDate.setHours(0, 0, 0, 0);
+        const isPaid = entryDate <= today;
+        
+        return {
+          id: `income-${entry.id}`,
+          description: entry.name,
+          amount: Number(entry.amount),
+          dueDate: entry.entryDate.split('T')[0],
+          paidDate: isPaid ? entry.entryDate.split('T')[0] : undefined,
+          status: isPaid ? 'paid' as TransactionStatus : 'pending' as TransactionStatus,
+          type: 'income' as const,
+          category: 'other' as any,
+          isRecurring: false,
+        };
+      });
 
       // Converter items para transactions
       const items = movimentation?.items || [];
       const expenseTransactions = items.map(convertItemToTransaction);
       
-      // Combinar todas as transações
+      // Combinar todas as transações (entradas primeiro, depois despesas)
       setTransactions([...incomeTransactions, ...expenseTransactions]);
+      
+      console.log('Movimentação carregada:', {
+        month,
+        year,
+        itemsCount: items.length,
+        incomeCount: incomeTransactions.length,
+        expenseCount: expenseTransactions.length,
+        totalTransactions: incomeTransactions.length + expenseTransactions.length
+      });
 
       // Carregar resumo de cartões
       const [cardsSummary, cardsData] = await Promise.all([
@@ -213,24 +232,37 @@ const Index = () => {
   }, [transactions, filters]);
 
   const handleStatusChange = async (id: string, status: TransactionStatus) => {
-    // Se for uma entrada de dinheiro (income), não fazer nada (já está paga)
+    // Se for uma entrada de dinheiro (income), não permitir alterar status manualmente
+    // O status é calculado automaticamente baseado na data
     if (id.startsWith('income-')) {
+      toast.info('O status das entradas é calculado automaticamente pela data');
       return;
     }
     
     const itemId = parseInt(id);
+    if (isNaN(itemId)) {
+      console.error('ID inválido:', id);
+      return;
+    }
     
     try {
-      if (status === 'paid' || status === 'early') {
+      const currentStatus = transactions.find(t => t.id === id)?.status;
+      
+      // Se está marcando como pago
+      if ((status === 'paid' || status === 'early') && currentStatus !== 'paid' && currentStatus !== 'early') {
         await monthMovimentationApi.payItem(itemId);
-      } else if (status === 'pending' || status === 'overdue') {
+        toast.success('Marcado como pago!');
+      } 
+      // Se está desmarcando (voltando para pendente)
+      else if ((status === 'pending' || status === 'overdue') && (currentStatus === 'paid' || currentStatus === 'early')) {
         await monthMovimentationApi.unpayItem(itemId);
+        toast.success('Marcado como pendente!');
       }
       
       // Recarregar dados para atualizar cálculos
       await loadData();
-      toast.success('Status atualizado com sucesso!');
     } catch (error: any) {
+      console.error('Erro ao atualizar status:', error);
       toast.error('Erro ao atualizar status: ' + (error.response?.data?.message || error.message));
     }
   };

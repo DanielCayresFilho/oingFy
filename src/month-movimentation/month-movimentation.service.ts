@@ -18,7 +18,8 @@ export class MonthMovimentationService {
     });
 
     if (existingMovimentation) {
-      return this.updateMonthMovimentation(userId, month, year);
+      const result = await this.updateMonthMovimentation(userId, month, year);
+      return result || this.findOne(userId, month, year);
     }
 
     const movimentation = await this.prisma.monthMovimentation.create({
@@ -37,7 +38,15 @@ export class MonthMovimentationService {
 
     await this.updateMonthMovimentation(userId, month, year);
 
-    return this.findOne(userId, month, year);
+    const result = await this.findOne(userId, month, year);
+    if (!result) {
+      // Retornar movimentação vazia se não encontrar (não deveria acontecer, mas por segurança)
+      return {
+        ...movimentation,
+        items: [],
+      };
+    }
+    return result;
   }
 
   async updateMonthMovimentation(userId: number, month: number, year: number) {
@@ -132,9 +141,37 @@ export class MonthMovimentationService {
     for (const account of accountsCredit) {
       if (account.installmentsPayed < account.installments) {
         const purchaseDate = new Date(account.purchaseDate);
-        const monthsSincePurchase = (year - purchaseDate.getFullYear()) * 12 + (month - 1 - purchaseDate.getMonth());
-
-        if (monthsSincePurchase >= 0 && monthsSincePurchase < (account.installments - account.installmentsPayed)) {
+        purchaseDate.setHours(0, 0, 0, 0);
+        
+        // Calcular quantos meses se passaram desde a compra
+        const targetDate = new Date(year, month - 1, 1);
+        targetDate.setHours(0, 0, 0, 0);
+        
+        // Calcular diferença em meses
+        const monthsDiff = (targetDate.getFullYear() - purchaseDate.getFullYear()) * 12 + 
+                          (targetDate.getMonth() - purchaseDate.getMonth());
+        
+        // Lógica de parcelas:
+        // Se comprou em janeiro e estamos em fevereiro (monthsDiff = 1):
+        // - Deve mostrar a parcela 1
+        // Se comprou em janeiro, já pagou 1 parcela, e estamos em março (monthsDiff = 2):
+        // - Deve mostrar a parcela 2
+        // Se comprou em janeiro, não pagou nenhuma, e estamos em março (monthsDiff = 2):
+        // - Deve mostrar a parcela 1 (a primeira que ainda não foi paga)
+        // 
+        // A parcela que deve aparecer no mês atual é: installmentsPayed + 1
+        // Mas só se já passou tempo suficiente desde a compra
+        // monthsDiff = 1 significa que passou 1 mês, então a parcela 1 deve aparecer
+        // monthsDiff = 2 significa que passaram 2 meses, então a parcela 2 deve aparecer (se pagou a 1) OU a parcela 1 (se não pagou)
+        // 
+        // Na verdade, devemos mostrar a próxima parcela a ser paga (installmentsPayed + 1)
+        // Mas só se já passou tempo suficiente (monthsDiff >= installmentsPayed + 1)
+        const nextInstallment = account.installmentsPayed + 1;
+        
+        // Só criar item se:
+        // 1. Já passou tempo suficiente para essa parcela aparecer (monthsDiff >= nextInstallment)
+        // 2. Ainda tem parcelas para pagar (nextInstallment <= account.installments)
+        if (monthsDiff >= nextInstallment && nextInstallment <= account.installments) {
           // Pegar apenas o dia do vencimento do cartão e aplicar ao mês/ano correto
           const originalDate = new Date(account.card.vencibleAt);
           const day = originalDate.getDate();
@@ -146,7 +183,7 @@ export class MonthMovimentationService {
             monthMovimentationId: movimentation.id,
             accountType: 'CREDIT',
             accountId: account.id,
-            accountName: `${account.name} (${account.installmentsPayed + monthsSincePurchase + 1}/${account.installments})`,
+            accountName: `${account.name} (${nextInstallment}/${account.installments})`,
             dueDate,
             amount: account.installmentsPrice,
             status: 'PENDING',
@@ -222,7 +259,11 @@ export class MonthMovimentationService {
       },
     });
 
-    return this.findOne(userId, month, year);
+    const result = await this.findOne(userId, month, year);
+    if (!result) {
+      throw new Error('Erro ao buscar movimentação após atualização');
+    }
+    return result;
   }
 
   async findOne(userId: number, month: number, year: number) {
