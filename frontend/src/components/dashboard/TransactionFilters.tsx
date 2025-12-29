@@ -25,11 +25,33 @@ const categories: TransactionCategory[] = [
 const statuses: TransactionStatus[] = ['paid', 'pending', 'overdue', 'early'];
 const types: TransactionType[] = ['income', 'expense', 'credit'];
 
-const months = [
-  { value: '2025-01', label: 'Janeiro 2025' },
-  { value: '2024-12', label: 'Dezembro 2024' },
-  { value: '2024-11', label: 'Novembro 2024' },
-];
+// Gerar meses dinamicamente (últimos 12 meses e próximos 2)
+const generateMonths = () => {
+  const months = [];
+  const currentDate = new Date();
+  
+  // Próximos 2 meses
+  for (let i = 0; i < 2; i++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
+    months.push({
+      value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+      label: date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
+    });
+  }
+  
+  // Últimos 12 meses
+  for (let i = 1; i <= 12; i++) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+    months.push({
+      value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+      label: date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }),
+    });
+  }
+  
+  return months;
+};
+
+const months = generateMonths();
 
 export function TransactionFilters({ filters, onFiltersChange }: TransactionFiltersProps) {
   const hasActiveFilters = 

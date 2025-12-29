@@ -94,15 +94,19 @@ const Index = () => {
         console.log('Movimentação não encontrada, gerando...');
       }
 
-      // Se não existir, gerar
-      if (!movimentation) {
+      // Se não existir, gerar (sempre gerar para garantir que temos dados atualizados)
+      if (!movimentation || !movimentation.items || movimentation.items.length === 0) {
         try {
+          console.log(`Gerando movimentação para ${month}/${year}...`);
           movimentation = await monthMovimentationApi.generate(month, year);
+          console.log('Movimentação gerada:', movimentation);
         } catch (error: any) {
           console.error('Erro ao gerar movimentação:', error);
           toast.error('Erro ao gerar movimentação mensal: ' + (error.response?.data?.message || error.message));
           // Continuar mesmo com erro para mostrar dados existentes
-          movimentation = { items: [] };
+          if (!movimentation) {
+            movimentation = { items: [] };
+          }
         }
       }
 
@@ -209,17 +213,23 @@ const Index = () => {
   }, [transactions, filters]);
 
   const handleStatusChange = async (id: string, status: TransactionStatus) => {
+    // Se for uma entrada de dinheiro (income), não fazer nada (já está paga)
+    if (id.startsWith('income-')) {
+      return;
+    }
+    
     const itemId = parseInt(id);
     
     try {
-      if (status === 'paid') {
+      if (status === 'paid' || status === 'early') {
         await monthMovimentationApi.payItem(itemId);
-      } else if (status === 'pending') {
+      } else if (status === 'pending' || status === 'overdue') {
         await monthMovimentationApi.unpayItem(itemId);
       }
       
-      // Recarregar dados
+      // Recarregar dados para atualizar cálculos
       await loadData();
+      toast.success('Status atualizado com sucesso!');
     } catch (error: any) {
       toast.error('Erro ao atualizar status: ' + (error.response?.data?.message || error.message));
     }
