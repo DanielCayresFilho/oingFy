@@ -18,6 +18,13 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "frontend", "test", "**/*spec.ts"]
+  "include": ["src/**/*", "prisma/**/*"],
+  "exclude": ["node_modules", "dist", "frontend", "test", "**/*spec.ts"],
+  "ts-node": {
+    "esm": false,
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  }
 }
