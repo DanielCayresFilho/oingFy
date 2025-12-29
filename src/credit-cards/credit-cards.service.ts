@@ -8,9 +8,17 @@ export class CreditCardsService {
   constructor(private prisma: PrismaService) {}
 
   create(userId: number, createCreditCardDto: CreateCreditCardDto) {
+    // Converter vencibleAt para DateTime completo
+    // Se vier como "YYYY-MM-DD", converter para DateTime ISO-8601
+    const vencibleAtDate = new Date(createCreditCardDto.vencibleAt);
+    if (isNaN(vencibleAtDate.getTime())) {
+      throw new Error('Data de vencimento inválida');
+    }
+    
     return this.prisma.creditCard.create({
       data: {
         ...createCreditCardDto,
+        vencibleAt: vencibleAtDate,
         userId,
       },
     });
@@ -44,9 +52,19 @@ export class CreditCardsService {
   }
 
   update(id: number, userId: number, updateCreditCardDto: UpdateCreditCardDto) {
+    // Converter vencibleAt se presente
+    const data: any = { ...updateCreditCardDto };
+    if (data.vencibleAt) {
+      const vencibleAtDate = new Date(data.vencibleAt);
+      if (isNaN(vencibleAtDate.getTime())) {
+        throw new Error('Data de vencimento inválida');
+      }
+      data.vencibleAt = vencibleAtDate;
+    }
+    
     return this.prisma.creditCard.updateMany({
       where: { id, userId },
-      data: updateCreditCardDto,
+      data,
     });
   }
 

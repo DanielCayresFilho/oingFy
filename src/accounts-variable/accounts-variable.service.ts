@@ -8,9 +8,16 @@ export class AccountsVariableService {
   constructor(private prisma: PrismaService) {}
 
   create(userId: number, createAccountVariableDto: CreateAccountVariableDto) {
+    // Converter vencibleAt para DateTime completo
+    const vencibleAtDate = new Date(createAccountVariableDto.vencibleAt);
+    if (isNaN(vencibleAtDate.getTime())) {
+      throw new Error('Data de vencimento inválida');
+    }
+    
     return this.prisma.accountVariable.create({
       data: {
         ...createAccountVariableDto,
+        vencibleAt: vencibleAtDate,
         userId,
       },
       include: {
@@ -39,9 +46,19 @@ export class AccountsVariableService {
   }
 
   update(id: number, userId: number, updateAccountVariableDto: UpdateAccountVariableDto) {
+    // Converter vencibleAt se presente
+    const data: any = { ...updateAccountVariableDto };
+    if (data.vencibleAt) {
+      const vencibleAtDate = new Date(data.vencibleAt);
+      if (isNaN(vencibleAtDate.getTime())) {
+        throw new Error('Data de vencimento inválida');
+      }
+      data.vencibleAt = vencibleAtDate;
+    }
+    
     return this.prisma.accountVariable.updateMany({
       where: { id, userId },
-      data: updateAccountVariableDto,
+      data,
     });
   }
 

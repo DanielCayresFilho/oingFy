@@ -19,8 +19,20 @@ export class AccountsCreditService {
       throw new Error('Cartão não encontrado');
     }
 
+    // Converter purchaseDate se presente
+    const data: any = { ...createAccountCreditDto };
+    if (data.purchaseDate) {
+      const purchaseDateObj = new Date(data.purchaseDate);
+      if (isNaN(purchaseDateObj.getTime())) {
+        throw new Error('Data de compra inválida');
+      }
+      data.purchaseDate = purchaseDateObj;
+    } else {
+      data.purchaseDate = new Date(); // Data atual se não fornecida
+    }
+
     return this.prisma.accountCredit.create({
-      data: createAccountCreditDto,
+      data,
       include: {
         card: true,
         category: true,
@@ -81,9 +93,19 @@ export class AccountsCreditService {
       throw new Error('Conta não encontrada');
     }
 
+    // Converter purchaseDate se presente
+    const data: any = { ...updateAccountCreditDto };
+    if (data.purchaseDate) {
+      const purchaseDateObj = new Date(data.purchaseDate);
+      if (isNaN(purchaseDateObj.getTime())) {
+        throw new Error('Data de compra inválida');
+      }
+      data.purchaseDate = purchaseDateObj;
+    }
+
     return this.prisma.accountCredit.update({
       where: { id },
-      data: updateAccountCreditDto,
+      data,
     });
   }
 

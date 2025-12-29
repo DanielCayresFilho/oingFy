@@ -69,9 +69,12 @@ export class MonthMovimentationService {
     });
 
     for (const account of accountsFixed) {
-      const dueDate = new Date(account.vencibleAt);
-      dueDate.setMonth(month - 1);
-      dueDate.setFullYear(year);
+      // Pegar apenas o dia do vencimento e aplicar ao mês/ano correto
+      const originalDate = new Date(account.vencibleAt);
+      const day = originalDate.getDate();
+      
+      // Criar data no mês/ano correto, tratando casos onde o dia não existe (ex: 31 de fevereiro)
+      const dueDate = new Date(year, month - 1, Math.min(day, new Date(year, month, 0).getDate()));
 
       items.push({
         monthMovimentationId: movimentation.id,
@@ -93,9 +96,12 @@ export class MonthMovimentationService {
 
     for (const account of accountsVariable) {
       if (account.qtPayed < account.quantity) {
-        const dueDate = new Date(account.vencibleAt);
-        dueDate.setMonth(month - 1);
-        dueDate.setFullYear(year);
+        // Pegar apenas o dia do vencimento e aplicar ao mês/ano correto
+        const originalDate = new Date(account.vencibleAt);
+        const day = originalDate.getDate();
+        
+        // Criar data no mês/ano correto, tratando casos onde o dia não existe (ex: 31 de fevereiro)
+        const dueDate = new Date(year, month - 1, Math.min(day, new Date(year, month, 0).getDate()));
 
         items.push({
           monthMovimentationId: movimentation.id,
@@ -129,9 +135,12 @@ export class MonthMovimentationService {
         const monthsSincePurchase = (year - purchaseDate.getFullYear()) * 12 + (month - 1 - purchaseDate.getMonth());
 
         if (monthsSincePurchase >= 0 && monthsSincePurchase < (account.installments - account.installmentsPayed)) {
-          const dueDate = new Date(account.card.vencibleAt);
-          dueDate.setMonth(month - 1);
-          dueDate.setFullYear(year);
+          // Pegar apenas o dia do vencimento do cartão e aplicar ao mês/ano correto
+          const originalDate = new Date(account.card.vencibleAt);
+          const day = originalDate.getDate();
+          
+          // Criar data no mês/ano correto, tratando casos onde o dia não existe (ex: 31 de fevereiro)
+          const dueDate = new Date(year, month - 1, Math.min(day, new Date(year, month, 0).getDate()));
 
           items.push({
             monthMovimentationId: movimentation.id,
