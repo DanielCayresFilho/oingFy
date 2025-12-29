@@ -60,8 +60,13 @@ const Index = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [creditCards, setCreditCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Inicializar com o mês atual
+  const initialDate = new Date();
+  const currentMonthString = format(initialDate, 'yyyy-MM');
+  
   const [filters, setFilters] = useState<FilterState>({
-    month: format(new Date(), 'yyyy-MM'),
+    month: currentMonthString,
     status: 'all',
     category: 'all',
     type: 'all',
@@ -81,15 +86,23 @@ const Index = () => {
       const [year, month] = filters.month.split('-').map(Number);
 
       // Carregar movimentação mensal
-      let movimentation = await monthMovimentationApi.findByMonth(month, year);
+      let movimentation = null;
+      try {
+        movimentation = await monthMovimentationApi.findByMonth(month, year);
+      } catch (error: any) {
+        // Se não encontrar, vai gerar abaixo
+        console.log('Movimentação não encontrada, gerando...');
+      }
 
       // Se não existir, gerar
       if (!movimentation) {
         try {
           movimentation = await monthMovimentationApi.generate(month, year);
         } catch (error: any) {
+          console.error('Erro ao gerar movimentação:', error);
           toast.error('Erro ao gerar movimentação mensal: ' + (error.response?.data?.message || error.message));
-          return;
+          // Continuar mesmo com erro para mostrar dados existentes
+          movimentation = { items: [] };
         }
       }
 
@@ -110,7 +123,7 @@ const Index = () => {
       }));
 
       // Converter items para transactions
-      const items = movimentation.items || [];
+      const items = movimentation?.items || [];
       const expenseTransactions = items.map(convertItemToTransaction);
       
       // Combinar todas as transações
