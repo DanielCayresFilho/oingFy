@@ -95,6 +95,7 @@ export class MonthMovimentationService {
         status: 'PENDING',
         categoryName: account.category.name,
         accountFixedId: account.id,
+        originName: 'Conta Fixa',
       });
     }
 
@@ -145,6 +146,7 @@ export class MonthMovimentationService {
               categoryName: account.category.name,
               accountVariableId: account.id,
               installmentNumber: installmentDueThisMonth,
+              originName: 'Conta Variável',
             });
           }
         }
@@ -163,11 +165,7 @@ export class MonthMovimentationService {
       },
     });
 
-    console.log(`[DEBUG] Processando ${accountsCredit.length} compras de crédito para ${month}/${year}`);
-
     for (const account of accountsCredit) {
-      console.log(`[DEBUG] Compra: ${account.name}, Parcelas: ${account.installmentsPayed}/${account.installments}`);
-
       if (account.installmentsPayed < account.installments) {
         const purchaseDate = new Date(account.purchaseDate);
         purchaseDate.setHours(0, 0, 0, 0);
@@ -179,8 +177,6 @@ export class MonthMovimentationService {
         // Calcular diferença em meses
         const monthsDiff = (targetDate.getFullYear() - purchaseDate.getFullYear()) * 12 +
                           (targetDate.getMonth() - purchaseDate.getMonth());
-
-        console.log(`[DEBUG] ${account.name}: purchaseDate=${purchaseDate.toISOString()}, targetDate=${targetDate.toISOString()}, monthsDiff=${monthsDiff}`);
 
         // CORREÇÃO: Determinar qual parcela deve aparecer neste mês específico
         // Se comprou em janeiro (mês 0) e estamos em:
@@ -195,8 +191,6 @@ export class MonthMovimentationService {
           // Calcular qual parcela deveria vencer neste mês (baseado no tempo)
           const installmentDueThisMonth = monthsDiff;
 
-          console.log(`[DEBUG] ${account.name}: installmentDueThisMonth=${installmentDueThisMonth}, check: ${installmentDueThisMonth} <= ${account.installments} && ${installmentDueThisMonth} > ${account.installmentsPayed}`);
-
           // Verificar se esta parcela ainda não foi totalmente paga
           // e se está dentro do número total de parcelas
           if (installmentDueThisMonth <= account.installments &&
@@ -207,8 +201,6 @@ export class MonthMovimentationService {
 
             // Criar data no mês/ano correto, tratando casos onde o dia não existe (ex: 31 de fevereiro)
             const dueDate = new Date(year, month - 1, Math.min(day, new Date(year, month, 0).getDate()));
-
-            console.log(`[DEBUG] ✓ ADICIONANDO item: ${account.name} parcela ${installmentDueThisMonth}/${account.installments}, vencimento: ${dueDate.toISOString()}`);
 
             items.push({
               monthMovimentationId: movimentation.id,
@@ -221,27 +213,17 @@ export class MonthMovimentationService {
               categoryName: account.category.name,
               accountCreditId: account.id,
               installmentNumber: installmentDueThisMonth,
+              originName: account.card.name, // Nome do cartão!
             });
-          } else {
-            console.log(`[DEBUG] ✗ NÃO ADICIONOU: condição falhou`);
           }
-        } else {
-          console.log(`[DEBUG] ✗ NÃO ADICIONOU: monthsDiff (${monthsDiff}) não é > 0`);
         }
-      } else {
-        console.log(`[DEBUG] ✗ NÃO ADICIONOU: todas as parcelas já foram pagas`);
       }
     }
-
-    console.log(`[DEBUG] Total de items criados para ${month}/${year}: ${items.length}`);
-    console.log(`[DEBUG] Breakdown: Fixed=${accountsFixed.length}, Variable=${accountsVariable.filter(a => a.qtPayed < a.quantity).length}, Credit=${items.filter(i => i.accountType === 'CREDIT').length}`);
 
     if (items.length > 0) {
       await this.prisma.monthMovimentationItem.createMany({
         data: items,
       });
-    } else {
-      console.log(`[DEBUG] ATENÇÃO: Nenhum item foi criado para ${month}/${year}!`);
     }
 
     // Buscar receitas do mês e verificar items atrasados

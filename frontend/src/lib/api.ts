@@ -114,6 +114,8 @@ export interface MonthMovimentationItem {
   status: PaymentStatus;
   paidAt: string | null;
   categoryName: string;
+  installmentNumber: number | null;
+  originName: string | null;
   accountFixedId: number | null;
   accountVariableId: number | null;
   accountCreditId: number | null;

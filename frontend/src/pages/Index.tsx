@@ -39,6 +39,7 @@ function convertItemToTransaction(item: MonthMovimentationItem): Transaction {
     type: typeMap[item.accountType],
     category: item.categoryName as any, // Usa o nome da categoria vindo do backend
     isRecurring: item.accountType === 'FIXED',
+    origin: item.originName || undefined, // Nome do cartão ou tipo da conta
   };
 }
 

@@ -26,7 +26,8 @@ export interface Transaction {
   type: TransactionType;
   category: TransactionCategory;
   isRecurring: boolean;
-  cardName?: string;
+  origin?: string; // Nome do cartão ou tipo da conta (Conta Fixa, Conta Variável)
+  cardName?: string; // Deprecated - usar 'origin'
 }
 
 export interface CreditCard {

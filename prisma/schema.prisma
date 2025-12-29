@@ -188,6 +188,7 @@ model MonthMovimentationItem {
   paidAt                DateTime?
   categoryName          String
   installmentNumber     Int?          // Número da parcela (para VARIABLE e CREDIT)
+  originName            String?       // Nome do cartão (para CREDIT) ou origem da conta
 
   accountFixedId    Int?
   accountVariableId Int?

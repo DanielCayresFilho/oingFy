@@ -72,6 +72,11 @@ export function TransactionTable({ transactions, onStatusChange }: TransactionTa
                 </span>
               </th>
               <th className="px-4 py-3 text-left">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Origem
+                </span>
+              </th>
+              <th className="px-4 py-3 text-left">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -146,6 +151,11 @@ export function TransactionTable({ transactions, onStatusChange }: TransactionTa
                   <td className="px-4 py-3">
                     <span className="text-sm text-muted-foreground">
                       {getCategoryLabel(transaction.category)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="text-sm text-muted-foreground">
+                      {transaction.origin || '-'}
                     </span>
                   </td>
                   <td className="px-4 py-3">
