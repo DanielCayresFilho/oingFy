@@ -4,13 +4,10 @@ dist
 .git
 .gitignore
 README.md
-docker-compose.yml
 .dockerignore
 npm-debug.log
 .vscode
 .idea
-frontend
 coverage
 *.md
-API_EXAMPLES.http
-QUICKSTART.md
+.vite
