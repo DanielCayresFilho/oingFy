@@ -187,6 +187,7 @@ model MonthMovimentationItem {
   status                PaymentStatus @default(PENDING)
   paidAt                DateTime?
   categoryName          String
+  installmentNumber     Int?          // Número da parcela (para VARIABLE e CREDIT)
 
   accountFixedId    Int?
   accountVariableId Int?

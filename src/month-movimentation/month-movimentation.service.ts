@@ -105,24 +105,49 @@ export class MonthMovimentationService {
 
     for (const account of accountsVariable) {
       if (account.qtPayed < account.quantity) {
-        // Pegar apenas o dia do vencimento e aplicar ao mês/ano correto
-        const originalDate = new Date(account.vencibleAt);
-        const day = originalDate.getDate();
-        
-        // Criar data no mês/ano correto, tratando casos onde o dia não existe (ex: 31 de fevereiro)
-        const dueDate = new Date(year, month - 1, Math.min(day, new Date(year, month, 0).getDate()));
+        // CORREÇÃO: Calcular qual parcela deveria vencer neste mês
+        const firstDueDate = new Date(account.vencibleAt);
+        firstDueDate.setHours(0, 0, 0, 0);
 
-        items.push({
-          monthMovimentationId: movimentation.id,
-          accountType: 'VARIABLE',
-          accountId: account.id,
-          accountName: account.name,
-          dueDate,
-          amount: account.price,
-          status: 'PENDING',
-          categoryName: account.category.name,
-          accountVariableId: account.id,
-        });
+        const targetDate = new Date(year, month - 1, 1);
+        targetDate.setHours(0, 0, 0, 0);
+
+        // Calcular quantos meses se passaram desde a primeira parcela
+        const monthsDiff = (targetDate.getFullYear() - firstDueDate.getFullYear()) * 12 +
+                          (targetDate.getMonth() - firstDueDate.getMonth());
+
+        // A primeira parcela vence no mês 0 (mês da criação)
+        // A segunda parcela vence no mês 1 (1 mês depois)
+        // monthsDiff = 0 significa que estamos no mês da primeira parcela
+        // monthsDiff = 1 significa que estamos no mês da segunda parcela
+
+        if (monthsDiff >= 0) {
+          // Calcular qual parcela deveria vencer neste mês (1-indexed)
+          const installmentDueThisMonth = monthsDiff + 1;
+
+          // Verificar se esta parcela ainda não foi paga e está dentro do total
+          if (installmentDueThisMonth <= account.quantity &&
+              installmentDueThisMonth > account.qtPayed) {
+            // Pegar apenas o dia do vencimento e aplicar ao mês/ano correto
+            const day = firstDueDate.getDate();
+
+            // Criar data no mês/ano correto, tratando casos onde o dia não existe (ex: 31 de fevereiro)
+            const dueDate = new Date(year, month - 1, Math.min(day, new Date(year, month, 0).getDate()));
+
+            items.push({
+              monthMovimentationId: movimentation.id,
+              accountType: 'VARIABLE',
+              accountId: account.id,
+              accountName: `${account.name} (${installmentDueThisMonth}/${account.quantity})`,
+              dueDate,
+              amount: account.price,
+              status: 'PENDING',
+              categoryName: account.category.name,
+              accountVariableId: account.id,
+              installmentNumber: installmentDueThisMonth,
+            });
+          }
+        }
       }
     }
 
@@ -142,54 +167,52 @@ export class MonthMovimentationService {
       if (account.installmentsPayed < account.installments) {
         const purchaseDate = new Date(account.purchaseDate);
         purchaseDate.setHours(0, 0, 0, 0);
-        
+
         // Calcular quantos meses se passaram desde a compra
         const targetDate = new Date(year, month - 1, 1);
         targetDate.setHours(0, 0, 0, 0);
-        
-        // Calcular diferença em meses
-        const monthsDiff = (targetDate.getFullYear() - purchaseDate.getFullYear()) * 12 + 
-                          (targetDate.getMonth() - purchaseDate.getMonth());
-        
-        // Lógica de parcelas:
-        // Se comprou em janeiro e estamos em fevereiro (monthsDiff = 1):
-        // - Deve mostrar a parcela 1
-        // Se comprou em janeiro, já pagou 1 parcela, e estamos em março (monthsDiff = 2):
-        // - Deve mostrar a parcela 2
-        // Se comprou em janeiro, não pagou nenhuma, e estamos em março (monthsDiff = 2):
-        // - Deve mostrar a parcela 1 (a primeira que ainda não foi paga)
-        // 
-        // A parcela que deve aparecer no mês atual é: installmentsPayed + 1
-        // Mas só se já passou tempo suficiente desde a compra
-        // monthsDiff = 1 significa que passou 1 mês, então a parcela 1 deve aparecer
-        // monthsDiff = 2 significa que passaram 2 meses, então a parcela 2 deve aparecer (se pagou a 1) OU a parcela 1 (se não pagou)
-        // 
-        // Na verdade, devemos mostrar a próxima parcela a ser paga (installmentsPayed + 1)
-        // Mas só se já passou tempo suficiente (monthsDiff >= installmentsPayed + 1)
-        const nextInstallment = account.installmentsPayed + 1;
-        
-        // Só criar item se:
-        // 1. Já passou tempo suficiente para essa parcela aparecer (monthsDiff >= nextInstallment)
-        // 2. Ainda tem parcelas para pagar (nextInstallment <= account.installments)
-        if (monthsDiff >= nextInstallment && nextInstallment <= account.installments) {
-          // Pegar apenas o dia do vencimento do cartão e aplicar ao mês/ano correto
-          const originalDate = new Date(account.card.vencibleAt);
-          const day = originalDate.getDate();
-          
-          // Criar data no mês/ano correto, tratando casos onde o dia não existe (ex: 31 de fevereiro)
-          const dueDate = new Date(year, month - 1, Math.min(day, new Date(year, month, 0).getDate()));
 
-          items.push({
-            monthMovimentationId: movimentation.id,
-            accountType: 'CREDIT',
-            accountId: account.id,
-            accountName: `${account.name} (${nextInstallment}/${account.installments})`,
-            dueDate,
-            amount: account.installmentsPrice,
-            status: 'PENDING',
-            categoryName: account.category.name,
-            accountCreditId: account.id,
-          });
+        // Calcular diferença em meses
+        const monthsDiff = (targetDate.getFullYear() - purchaseDate.getFullYear()) * 12 +
+                          (targetDate.getMonth() - purchaseDate.getMonth());
+
+        // CORREÇÃO: Determinar qual parcela deve aparecer neste mês específico
+        // Se comprou em janeiro (mês 0) e estamos em:
+        // - Janeiro (mês 0): monthsDiff = 0, parcela que vence = 0 (não mostra ainda, compra no mesmo mês)
+        // - Fevereiro (mês 1): monthsDiff = 1, parcela que vence = 1
+        // - Março (mês 2): monthsDiff = 2, parcela que vence = 2
+        //
+        // A parcela que vence no mês atual é baseada no tempo decorrido, não nas parcelas pagas
+        // Isso permite mostrar parcelas atrasadas
+
+        if (monthsDiff > 0) {
+          // Calcular qual parcela deveria vencer neste mês (baseado no tempo)
+          const installmentDueThisMonth = monthsDiff;
+
+          // Verificar se esta parcela ainda não foi totalmente paga
+          // e se está dentro do número total de parcelas
+          if (installmentDueThisMonth <= account.installments &&
+              installmentDueThisMonth > account.installmentsPayed) {
+            // Pegar apenas o dia do vencimento do cartão e aplicar ao mês/ano correto
+            const originalDate = new Date(account.card.vencibleAt);
+            const day = originalDate.getDate();
+
+            // Criar data no mês/ano correto, tratando casos onde o dia não existe (ex: 31 de fevereiro)
+            const dueDate = new Date(year, month - 1, Math.min(day, new Date(year, month, 0).getDate()));
+
+            items.push({
+              monthMovimentationId: movimentation.id,
+              accountType: 'CREDIT',
+              accountId: account.id,
+              accountName: `${account.name} (${installmentDueThisMonth}/${account.installments})`,
+              dueDate,
+              amount: account.installmentsPrice,
+              status: 'PENDING',
+              categoryName: account.category.name,
+              accountCreditId: account.id,
+              installmentNumber: installmentDueThisMonth,
+            });
+          }
         }
       }
     }
@@ -317,26 +340,39 @@ export class MonthMovimentationService {
       },
     });
 
-    if (item.accountVariableId) {
-      await this.prisma.accountVariable.update({
+    // Atualizar o contador de parcelas pagas baseado no número da parcela
+    if (item.accountVariableId && item.installmentNumber) {
+      const account = await this.prisma.accountVariable.findUnique({
         where: { id: item.accountVariableId },
-        data: {
-          qtPayed: {
-            increment: 1,
-          },
-        },
       });
+
+      // Atualizar qtPayed apenas se esta parcela for maior que o atual
+      // Isso permite pagar parcelas fora de ordem
+      if (account && item.installmentNumber > account.qtPayed) {
+        await this.prisma.accountVariable.update({
+          where: { id: item.accountVariableId },
+          data: {
+            qtPayed: item.installmentNumber,
+          },
+        });
+      }
     }
 
-    if (item.accountCreditId) {
-      await this.prisma.accountCredit.update({
+    if (item.accountCreditId && item.installmentNumber) {
+      const account = await this.prisma.accountCredit.findUnique({
         where: { id: item.accountCreditId },
-        data: {
-          installmentsPayed: {
-            increment: 1,
-          },
-        },
       });
+
+      // Atualizar installmentsPayed apenas se esta parcela for maior que o atual
+      // Isso permite pagar parcelas fora de ordem
+      if (account && item.installmentNumber > account.installmentsPayed) {
+        await this.prisma.accountCredit.update({
+          where: { id: item.accountCreditId },
+          data: {
+            installmentsPayed: item.installmentNumber,
+          },
+        });
+      }
     }
 
     return this.updateMonthMovimentation(
@@ -370,38 +406,52 @@ export class MonthMovimentationService {
       },
     });
 
+    // Recalcular o contador de parcelas pagas
+    // Buscar o maior número de parcela que ainda está paga
     if (item.accountVariableId) {
-      const account = await this.prisma.accountVariable.findUnique({
-        where: { id: item.accountVariableId },
+      const paidItems = await this.prisma.monthMovimentationItem.findMany({
+        where: {
+          accountVariableId: item.accountVariableId,
+          status: 'PAID',
+          installmentNumber: { not: null },
+        },
+        orderBy: {
+          installmentNumber: 'desc',
+        },
+        take: 1,
       });
 
-      if (account && account.qtPayed > 0) {
-        await this.prisma.accountVariable.update({
-          where: { id: item.accountVariableId },
-          data: {
-            qtPayed: {
-              decrement: 1,
-            },
-          },
-        });
-      }
+      const maxPaidInstallment = paidItems.length > 0 ? paidItems[0].installmentNumber : 0;
+
+      await this.prisma.accountVariable.update({
+        where: { id: item.accountVariableId },
+        data: {
+          qtPayed: maxPaidInstallment || 0,
+        },
+      });
     }
 
     if (item.accountCreditId) {
-      const account = await this.prisma.accountCredit.findUnique({
-        where: { id: item.accountCreditId },
+      const paidItems = await this.prisma.monthMovimentationItem.findMany({
+        where: {
+          accountCreditId: item.accountCreditId,
+          status: 'PAID',
+          installmentNumber: { not: null },
+        },
+        orderBy: {
+          installmentNumber: 'desc',
+        },
+        take: 1,
       });
 
-      if (account && account.installmentsPayed > 0) {
-        await this.prisma.accountCredit.update({
-          where: { id: item.accountCreditId },
-          data: {
-            installmentsPayed: {
-              decrement: 1,
-            },
-          },
-        });
-      }
+      const maxPaidInstallment = paidItems.length > 0 ? paidItems[0].installmentNumber : 0;
+
+      await this.prisma.accountCredit.update({
+        where: { id: item.accountCreditId },
+        data: {
+          installmentsPayed: maxPaidInstallment || 0,
+        },
+      });
     }
 
     return this.updateMonthMovimentation(
