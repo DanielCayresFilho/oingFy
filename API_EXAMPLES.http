@@ -1,0 +1,336 @@
+### OingFy API Examples
+### Use com extensão REST Client no VSCode ou cole no Postman/Insomnia
+
+@baseUrl = http://localhost:3000
+@token = SEU_TOKEN_AQUI
+
+### ============================================
+### AUTH - Autenticação
+### ============================================
+
+### Registrar novo usuário
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "teste@oingfy.com",
+  "password": "senha12345",
+  "nome": "João da Silva"
+}
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "teste@oingfy.com",
+  "password": "senha12345"
+}
+
+### Perfil do usuário
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+
+
+### ============================================
+### CATEGORIES - Categorias
+### ============================================
+
+### Listar categorias
+GET {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+
+### Criar categoria
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Mercado"
+}
+
+### Criar múltiplas categorias
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Contas Fixas"
+}
+
+###
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Farmácia"
+}
+
+###
+POST {{baseUrl}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Lazer"
+}
+
+
+### ============================================
+### ACCOUNTS FIXED - Contas Fixas
+### ============================================
+
+### Listar contas fixas
+GET {{baseUrl}}/accounts-fixed
+Authorization: Bearer {{token}}
+
+### Criar conta fixa (Internet)
+POST {{baseUrl}}/accounts-fixed
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Internet Fibra",
+  "vencibleAt": "2024-01-10",
+  "price": 99.90,
+  "categoryId": 2
+}
+
+### Criar conta fixa (Luz)
+POST {{baseUrl}}/accounts-fixed
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Conta de Luz",
+  "vencibleAt": "2024-01-15",
+  "price": 150.00,
+  "categoryId": 2
+}
+
+### Atualizar conta fixa
+PATCH {{baseUrl}}/accounts-fixed/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "price": 109.90
+}
+
+### Deletar conta fixa
+DELETE {{baseUrl}}/accounts-fixed/1
+Authorization: Bearer {{token}}
+
+
+### ============================================
+### ACCOUNTS VARIABLE - Contas Variáveis
+### ============================================
+
+### Listar contas variáveis
+GET {{baseUrl}}/accounts-variable
+Authorization: Bearer {{token}}
+
+### Criar conta variável (Parcelas)
+POST {{baseUrl}}/accounts-variable
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Parcela Apartamento",
+  "vencibleAt": "2024-01-20",
+  "price": 2000.00,
+  "quantity": 120,
+  "categoryId": 1
+}
+
+### Pagar parcela de conta variável
+POST {{baseUrl}}/accounts-variable/1/pay
+Authorization: Bearer {{token}}
+
+
+### ============================================
+### CREDIT CARDS - Cartões de Crédito
+### ============================================
+
+### Listar cartões
+GET {{baseUrl}}/credit-cards
+Authorization: Bearer {{token}}
+
+### Criar cartão
+POST {{baseUrl}}/credit-cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nubank",
+  "vencibleAt": "2024-01-05",
+  "totalLimite": 5000.00
+}
+
+### Criar outro cartão
+POST {{baseUrl}}/credit-cards
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Inter",
+  "vencibleAt": "2024-01-10",
+  "totalLimite": 3000.00
+}
+
+### Ver limite disponível
+GET {{baseUrl}}/credit-cards/1/available-limit
+Authorization: Bearer {{token}}
+
+
+### ============================================
+### ACCOUNTS CREDIT - Compras no Crédito
+### ============================================
+
+### Listar compras no crédito
+GET {{baseUrl}}/accounts-credit
+Authorization: Bearer {{token}}
+
+### Filtrar por cartão
+GET {{baseUrl}}/accounts-credit?cardId=1
+Authorization: Bearer {{token}}
+
+### Criar compra parcelada (TV)
+POST {{baseUrl}}/accounts-credit
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cardId": 1,
+  "name": "Smart TV Samsung 55\"",
+  "totalPrice": 3000.00,
+  "installmentsPrice": 300.00,
+  "installments": 10,
+  "categoryId": 4,
+  "purchaseDate": "2024-01-15"
+}
+
+### Criar compra parcelada (Celular)
+POST {{baseUrl}}/accounts-credit
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "cardId": 1,
+  "name": "iPhone 15",
+  "totalPrice": 6000.00,
+  "installmentsPrice": 500.00,
+  "installments": 12,
+  "categoryId": 4,
+  "purchaseDate": "2024-01-20"
+}
+
+### Pagar parcela
+POST {{baseUrl}}/accounts-credit/1/pay
+Authorization: Bearer {{token}}
+
+
+### ============================================
+### MONEY ENTRIES - Entradas de Dinheiro
+### ============================================
+
+### Listar todas entradas
+GET {{baseUrl}}/money-entries
+Authorization: Bearer {{token}}
+
+### Entradas por mês
+GET {{baseUrl}}/money-entries/by-month?month=1&year=2024
+Authorization: Bearer {{token}}
+
+### Total do mês
+GET {{baseUrl}}/money-entries/total-by-month?month=1&year=2024
+Authorization: Bearer {{token}}
+
+### Registrar salário
+POST {{baseUrl}}/money-entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Salário Janeiro 2024",
+  "entryDate": "2024-01-05",
+  "amount": 8000.00
+}
+
+### Registrar freelance
+POST {{baseUrl}}/money-entries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Freelance - Projeto Web",
+  "entryDate": "2024-01-20",
+  "amount": 2000.00
+}
+
+
+### ============================================
+### MONTH MOVIMENTATION - Movimentação Mensal
+### ============================================
+
+### Gerar movimentação do mês
+POST {{baseUrl}}/month-movimentation/generate?month=1&year=2024
+Authorization: Bearer {{token}}
+
+### Atualizar movimentação
+POST {{baseUrl}}/month-movimentation/update?month=1&year=2024
+Authorization: Bearer {{token}}
+
+### Listar todas movimentações
+GET {{baseUrl}}/month-movimentation
+Authorization: Bearer {{token}}
+
+### Movimentação por mês
+GET {{baseUrl}}/month-movimentation/by-month?month=1&year=2024
+Authorization: Bearer {{token}}
+
+### Agrupar por categoria
+GET {{baseUrl}}/month-movimentation/by-category?month=1&year=2024
+Authorization: Bearer {{token}}
+
+### Marcar item como pago
+POST {{baseUrl}}/month-movimentation/items/1/pay
+Authorization: Bearer {{token}}
+
+### Desmarcar pagamento
+POST {{baseUrl}}/month-movimentation/items/1/unpay
+Authorization: Bearer {{token}}
+
+
+### ============================================
+### REPORTS - Relatórios
+### ============================================
+
+### Dashboard completo
+GET {{baseUrl}}/reports/dashboard
+Authorization: Bearer {{token}}
+
+### Resumo financeiro
+GET {{baseUrl}}/reports/financial-summary?month=1&year=2024
+Authorization: Bearer {{token}}
+
+### Resumo dos cartões
+GET {{baseUrl}}/reports/credit-cards-summary
+Authorization: Bearer {{token}}
+
+### Gastos por categoria
+GET {{baseUrl}}/reports/expenses-by-category?month=1&year=2024
+Authorization: Bearer {{token}}
+
+### Contas a vencer (próximos 7 dias)
+GET {{baseUrl}}/reports/upcoming-bills?days=7
+Authorization: Bearer {{token}}
+
+### Contas atrasadas
+GET {{baseUrl}}/reports/overdue-bills
+Authorization: Bearer {{token}}
+
+### Comparação anual
+GET {{baseUrl}}/reports/yearly-comparison?year=2024
+Authorization: Bearer {{token}}

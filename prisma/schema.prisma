@@ -1,0 +1,202 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+  nome     String
+
+  accountsFixes     AccountFixed[]
+  accountsVariable  AccountVariable[]
+  creditCards       CreditCard[]
+  moneyEntries      MoneyEntry[]
+  categories        Category[]
+  monthMovimentations MonthMovimentation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Category {
+  id     Int    @id @default(autoincrement())
+  name   String
+  userId Int
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accountsFixes    AccountFixed[]
+  accountsVariable AccountVariable[]
+  accountsCredit   AccountCredit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model AccountFixed {
+  id          Int      @id @default(autoincrement())
+  name        String
+  vencibleAt  DateTime
+  price       Decimal  @db.Decimal(10, 2)
+  categoryId  Int
+  userId      Int
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  payments MonthMovimentationItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("accounts_fixed")
+}
+
+model AccountVariable {
+  id        Int      @id @default(autoincrement())
+  name      String
+  vencibleAt DateTime
+  price     Decimal  @db.Decimal(10, 2)
+  quantity  Int
+  qtPayed   Int      @default(0)
+  categoryId Int
+  userId    Int
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  payments MonthMovimentationItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("accounts_variable")
+}
+
+model CreditCard {
+  id          Int     @id @default(autoincrement())
+  name        String
+  vencibleAt  DateTime
+  totalLimite Decimal @db.Decimal(10, 2)
+  userId      Int
+
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountsCredit  AccountCredit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("credit_cards")
+}
+
+model AccountCredit {
+  id                 Int     @id @default(autoincrement())
+  cardId             Int
+  name               String
+  totalPrice         Decimal @db.Decimal(10, 2)
+  installmentsPrice  Decimal @db.Decimal(10, 2)
+  installments       Int
+  installmentsPayed  Int     @default(0)
+  categoryId         Int
+  purchaseDate       DateTime @default(now())
+
+  card     CreditCard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  category Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  payments MonthMovimentationItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("accounts_credit")
+}
+
+model MoneyEntry {
+  id        Int      @id @default(autoincrement())
+  name      String
+  entryDate DateTime
+  amount    Decimal  @db.Decimal(10, 2)
+  userId    Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("money_entries")
+}
+
+model MonthMovimentation {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  month       Int
+  year        Int
+
+  totalIncome       Decimal @db.Decimal(10, 2) @default(0)
+  totalExpenses     Decimal @db.Decimal(10, 2) @default(0)
+  totalPaid         Decimal @db.Decimal(10, 2) @default(0)
+  totalPending      Decimal @db.Decimal(10, 2) @default(0)
+  totalOverdue      Decimal @db.Decimal(10, 2) @default(0)
+  balance           Decimal @db.Decimal(10, 2) @default(0)
+
+  user  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items MonthMovimentationItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, month, year])
+  @@map("month_movimentations")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  ADVANCED
+}
+
+enum AccountType {
+  FIXED
+  VARIABLE
+  CREDIT
+}
+
+model MonthMovimentationItem {
+  id                    Int           @id @default(autoincrement())
+  monthMovimentationId  Int
+  accountType           AccountType
+  accountId             Int
+  accountName           String
+  dueDate               DateTime
+  amount                Decimal       @db.Decimal(10, 2)
+  status                PaymentStatus @default(PENDING)
+  paidAt                DateTime?
+  categoryName          String
+
+  accountFixedId    Int?
+  accountVariableId Int?
+  accountCreditId   Int?
+
+  monthMovimentation MonthMovimentation @relation(fields: [monthMovimentationId], references: [id], onDelete: Cascade)
+  accountFixed       AccountFixed?      @relation(fields: [accountFixedId], references: [id])
+  accountVariable    AccountVariable?   @relation(fields: [accountVariableId], references: [id])
+  accountCredit      AccountCredit?     @relation(fields: [accountCreditId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("month_movimentation_items")
+}
