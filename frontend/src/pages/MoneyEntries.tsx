@@ -305,12 +305,12 @@ const MoneyEntries = () => {
 
         {/* Filtros */}
         <div className="mb-4 flex gap-4">
-          <Select value={filterMonth} onValueChange={setFilterMonth}>
+          <Select value={filterMonth || 'all'} onValueChange={(value) => setFilterMonth(value === 'all' ? '' : value)}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Filtrar por mês" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os meses</SelectItem>
+              <SelectItem value="all">Todos os meses</SelectItem>
               {months.map((month) => (
                 <SelectItem key={month.value} value={month.value}>
                   {month.label}
@@ -318,12 +318,12 @@ const MoneyEntries = () => {
               ))}
             </SelectContent>
           </Select>
-          <Select value={filterYear} onValueChange={setFilterYear}>
+          <Select value={filterYear || 'all'} onValueChange={(value) => setFilterYear(value === 'all' ? '' : value)}>
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Ano" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Todos os anos</SelectItem>
+              <SelectItem value="all">Todos os anos</SelectItem>
               {years.map((year) => (
                 <SelectItem key={year} value={year}>
                   {year}
