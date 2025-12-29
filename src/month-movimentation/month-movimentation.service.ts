@@ -19,7 +19,7 @@ export class MonthMovimentationService {
 
     if (existingMovimentation) {
       const result = await this.updateMonthMovimentation(userId, month, year);
-      return result || this.findOne(userId, month, year);
+      return result || await this.findOne(userId, month, year);
     }
 
     const movimentation = await this.prisma.monthMovimentation.create({
@@ -242,6 +242,10 @@ export class MonthMovimentationService {
       }
     }
 
+    // Buscar receitas do mês
+    const currentDate = new Date();
+    currentDate.setHours(23, 59, 59, 999);
+
     const moneyEntries = await this.prisma.moneyEntry.findMany({
       where: {
         userId,
@@ -252,7 +256,17 @@ export class MonthMovimentationService {
       },
     });
 
-    const totalIncome = moneyEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
+    // Somar apenas receitas que já foram recebidas (entryDate <= hoje)
+    const totalIncome = moneyEntries.reduce((sum, entry) => {
+      const entryDate = new Date(entry.entryDate);
+      entryDate.setHours(0, 0, 0, 0);
+
+      // Só conta se a data da receita já passou
+      if (entryDate <= currentDate) {
+        return sum + Number(entry.amount);
+      }
+      return sum;
+    }, 0);
 
     const updatedItems = await this.prisma.monthMovimentationItem.findMany({
       where: { monthMovimentationId: movimentation.id },

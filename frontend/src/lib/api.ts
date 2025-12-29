@@ -387,13 +387,13 @@ export const moneyEntriesApi = {
 // API de movimentação mensal
 export const monthMovimentationApi = {
   generate: async (month: number, year: number): Promise<MonthMovimentation> => {
-    const response = await api.post<MonthMovimentation>('/month-movimentation/generate', null, {
+    const response = await api.post<MonthMovimentation>('/month-movimentation/generate', {}, {
       params: { month: month.toString(), year: year.toString() },
     });
     return response.data;
   },
   update: async (month: number, year: number): Promise<MonthMovimentation> => {
-    const response = await api.post<MonthMovimentation>('/month-movimentation/update', null, {
+    const response = await api.post<MonthMovimentation>('/month-movimentation/update', {}, {
       params: { month: month.toString(), year: year.toString() },
     });
     return response.data;

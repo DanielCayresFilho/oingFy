@@ -6,6 +6,9 @@ export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   async getFinancialSummary(userId: number, month: number, year: number) {
+    const currentDate = new Date();
+    currentDate.setHours(23, 59, 59, 999);
+
     const moneyEntries = await this.prisma.moneyEntry.findMany({
       where: {
         userId,
@@ -16,7 +19,17 @@ export class ReportsService {
       },
     });
 
-    const totalIncome = moneyEntries.reduce((sum, entry) => sum + Number(entry.amount), 0);
+    // Somar apenas receitas que já foram recebidas (entryDate <= hoje)
+    const totalIncome = moneyEntries.reduce((sum, entry) => {
+      const entryDate = new Date(entry.entryDate);
+      entryDate.setHours(0, 0, 0, 0);
+
+      // Só conta se a data da receita já passou
+      if (entryDate <= currentDate) {
+        return sum + Number(entry.amount);
+      }
+      return sum;
+    }, 0);
 
     const movimentation = await this.prisma.monthMovimentation.findUnique({
       where: {
